@@ -4,6 +4,9 @@ from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 
 from core.models import Recipe, Tag, Ingredient
+from core.models.recipe import recipe_image_file_path
+
+from unittest.mock import patch
 
 
 class UserModelTest(TestCase):
@@ -180,3 +183,11 @@ class IngredientModelTest(TestCase):
         Ingredient.objects.get(name='Salt').delete()
         has_salt = Ingredient.objects.filter(name='Salt').exists()
         self.assertFalse(has_salt)
+
+    @patch('core.models.recipe.uuid.uuid4')
+    def test_upload_file_with_mock_success(self, mock_uuid):
+        uuid = 'test-uuid'
+        mock_uuid.return_value = uuid
+        file_path = recipe_image_file_path(None, 'example.jpg')
+
+        self.assertEqual(file_path, 'uploads/recipe/{}.jpg'.format(uuid))

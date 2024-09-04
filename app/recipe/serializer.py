@@ -25,7 +25,7 @@ class RecipeDetailSerializer(RecipeSerializer):
     """Serializer of Recipe Model."""
     class Meta(RecipeSerializer.Meta):
         """Meta class for RecipeDetailSerializer."""
-        fields = RecipeSerializer.Meta.fields + ['description']
+        fields = RecipeSerializer.Meta.fields + ['description', 'image']
 
     def create(self, validated_data):
         """Override a create method."""
@@ -72,3 +72,13 @@ class RecipeDetailSerializer(RecipeSerializer):
                 recipe.ingredients.add(ingredient_obj)
             recipe.save()
         return recipe
+
+
+class ImageSerializer(serializers.ModelSerializer):
+    """Image serializer class."""
+    class Meta:
+        """Meta class for ImageSerializer."""
+        model = Recipe
+        fields = ['id', 'image']
+        read_only_fields = ['id']
+        extra_kwargs = {'image': {'required': 'True'}}

@@ -1,4 +1,7 @@
 """Test for Recipe serializer API."""
+import tempfile
+import os
+
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -9,8 +12,15 @@ from recipe.serializer import RecipeSerializer, RecipeDetailSerializer
 from rest_framework.test import APIClient
 from rest_framework import status
 
+from PIL import Image
+
 
 RECIPE_URL = reverse('recipe:recipe-list')
+
+
+def get_image_upload_url(recipe_id):
+    """Get upload image url."""
+    return reverse('recipe:recipe-upload-image', args=[recipe_id])
 
 
 def get_detail_url(recipe_id: int) -> str:
@@ -325,7 +335,6 @@ class PrivateSerializerTest(TestCase):
             Ingredient(user=self.__user, name=ingredient['name'])
             for ingredient in recipe_data['ingredients']
         )
-        recipe_data
         recipe = Recipe.objects.create(
             user=self.__user, **{k: v for k, v in recipe_data.items()
                                  if k != 'tags' and k != 'ingredients'})
@@ -430,3 +439,67 @@ class PrivateSerializerTest(TestCase):
         res = self.__client.delete(get_detail_url(res_create.data['id']))
 
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class ImageUploadTest(TestCase):
+    """Test class for recipe image upload."""
+
+    def setUp(self):
+        super().setUp()
+        self.__user = get_user_model().objects.create_user(
+            name='Test name',
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.__client = APIClient()
+        self.__client.force_authenticate(self.__user)
+        recipe_data = {
+            'title': 'Test title',
+            'time_minutes': 10,
+            'price': 10.50,
+            'tags': [{'name': 'Tag1'}, {'name': 'Tag2'}],
+            'ingredients': [{'name': 'Salt'}, {'name': 'Sugar'}]
+        }
+
+        tags = Tag.objects.bulk_create(
+            Tag(user=self.__user, name=tag['name'])
+            for tag in recipe_data['tags']
+        )
+        ingredients = Ingredient.objects.bulk_create(
+            Ingredient(user=self.__user, name=ingredient['name'])
+            for ingredient in recipe_data['ingredients']
+        )
+        self.__recipe = Recipe.objects.create(
+            user=self.__user, **{k: v for k, v in recipe_data.items()
+                                 if k != 'tags' and k != 'ingredients'})
+        self.__recipe.tags.set(tags)
+        self.__recipe.ingredients.set(ingredients)
+        self.__recipe.save()
+        self.__recipe.refresh_from_db()
+
+    def tearDown(self):
+        super().tearDown()
+        self.__recipe.image.delete()
+
+    def test_upload_image(self):
+        """Test uploading an image to a recipe."""
+        url = get_image_upload_url(self.__recipe.id)
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new('RGB', (10, 10))
+            img.save(image_file, format='JPEG')
+            image_file.seek(0)
+            payload = {'image': image_file}
+            res = self.__client.post(url, payload, format='multipart')
+
+        self.__recipe.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('image', res.data)
+        self.assertTrue(os.path.exists(self.__recipe.image.path))
+
+    def test_upload_image_bad_request(self):
+        """Test uploading invalid image."""
+        url = get_image_upload_url(self.__recipe.id)
+        payload = {'image': 'notanimage'}
+        res = self.__client.post(url, payload, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

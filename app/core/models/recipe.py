@@ -1,6 +1,16 @@
 """Recipe model module."""
+import uuid
+import os
+
 from django.db import models
 from django.contrib.auth import get_user_model
+
+
+def recipe_image_file_path(instance, filename):
+    """Generate file path for new recipe image."""
+    ext = os.path.splitext(filename)[1]
+    filename = '{}{}'.format(uuid.uuid4(), ext)
+    return os.path.join('uploads', 'recipe', filename)
 
 
 class Recipe(models.Model):
@@ -17,6 +27,7 @@ class Recipe(models.Model):
     link = models.URLField(max_length=1024, blank=True)
     tags = models.ManyToManyField('Tag')
     ingredients = models.ManyToManyField('Ingredient')
+    image = models.ImageField(upload_to=recipe_image_file_path, null=True)
 
     class Meta:
         constraints = [

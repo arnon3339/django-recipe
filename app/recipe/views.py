@@ -1,8 +1,14 @@
 """View module for Recipe."""
-from .serializer import RecipeDetailSerializer, RecipeSerializer
+from .serializer import (
+    RecipeDetailSerializer, RecipeSerializer, ImageSerializer
+)
 from core.models import Recipe
 
-from rest_framework import viewsets, authentication, permissions
+from rest_framework import (
+    viewsets, authentication, permissions,
+    status, response
+)
+from rest_framework.decorators import action
 
 
 class RecipeView(viewsets.ModelViewSet):
@@ -21,4 +27,19 @@ class RecipeView(viewsets.ModelViewSet):
         "Return the serializer class for request."
         if self.action == 'list':
             return RecipeSerializer
+        elif self.action == 'upload_image':
+            return ImageSerializer
+
         return self.serializer_class
+
+    @action(methods=['post'], url_path='upload-image', detail=True)
+    def upload_image(self, request, pk=None):
+        recipe = self.get_object()
+        serializer = self.get_serializer(recipe, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(serializer.data,
+                                     status.HTTP_200_OK)
+        return response.Response(serializer.errors,
+                                 status.HTTP_400_BAD_REQUEST)
