@@ -4,7 +4,8 @@ from core.models import Tag
 
 from rest_framework import authentication, permissions
 from rest_framework import viewsets, mixins
-
+from rest_framework.filters import SearchFilter
+from django_filters import rest_framework as filters
 
 from .serializer import TagSerializer
 
@@ -19,6 +20,9 @@ class TagView(
     """Generic API view of tag app."""
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
+    filter_backends = [filters.DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['name']
+    search_fields = ['name']
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
@@ -26,13 +30,8 @@ class TagView(
         """Get custom query set."""
         queryset = self.queryset.filter(user=self.request.user)
         id_params = self.request.query_params.get('id')
-        name_params = self.request.query_params.get('name')
 
         if id_params:
             ids = [int(id_i) for id_i in id_params.split(',')]
             queryset = queryset.filter(id__in=ids)
-        if name_params:
-            names = name_params.split(',')
-            queryset = queryset.filter(name__in=names)
-
         return queryset.order_by('name')

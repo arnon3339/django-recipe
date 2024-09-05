@@ -210,3 +210,29 @@ class PrivateIngredientTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         for i in range(len(res.data)):
             self.assertEqual(res.data[i], ingredients_serializers[i].data)
+
+    def test_get_tag_by_search_name_success(self):
+        """Test to get ingredient by searching name to be successful."""
+        ingredient_data = [
+            {
+                'name': 'Sugar'
+            },
+            {
+                'name': 'Brow sugar'
+            },
+            {
+                'name': 'Salt'
+            }
+        ]
+
+        for ingredient in ingredient_data:
+            Ingredient.objects.create(user=self.__user_1,
+                                      name=ingredient['name'])
+
+        params = {'search': 'sugar'}
+        res = self.__client_1.get(INGREDIENT_URL, params)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+        self.assertEqual(res.data[0]['name'], 'Brow sugar')
+        self.assertEqual(res.data[1]['name'], 'Sugar')

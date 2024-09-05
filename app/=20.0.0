@@ -1,0 +1,14 @@
+Collecting django-filter
+  Downloading django_filter-24.3-py3-none-any.whl.metadata (5.2 kB)
+Collecting Django>=4.2 (from django-filter)
+  Downloading Django-4.2.16-py3-none-any.whl.metadata (4.1 kB)
+Requirement already satisfied: asgiref<4,>=3.6.0 in /py/lib/python3.9/site-packages (from Django>=4.2->django-filter) (3.8.1)
+Requirement already satisfied: sqlparse>=0.3.1 in /py/lib/python3.9/site-packages (from Django>=4.2->django-filter) (0.5.1)
+Requirement already satisfied: typing-extensions>=4 in /py/lib/python3.9/site-packages (from asgiref<4,>=3.6.0->Django>=4.2->django-filter) (4.12.2)
+Downloading django_filter-24.3-py3-none-any.whl (95 kB)
+Downloading Django-4.2.16-py3-none-any.whl (8.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.0/8.0 MB 4.2 MB/s eta 0:00:00
+Installing collected packages: Django, django-filter
+  Attempting uninstall: Django
+    Found existing installation: Django 3.2.25
+    Uninstalling Django-3.2.25:

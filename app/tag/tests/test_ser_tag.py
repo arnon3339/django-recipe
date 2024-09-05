@@ -11,6 +11,8 @@ from tag.serializer import TagSerializer
 
 import random
 
+random.seed(123456)
+
 
 TAG_URL = reverse('tag:tag-list')
 
@@ -226,3 +228,29 @@ class PrivateTagSerializerTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         for i in range(len(res.data)):
             self.assertEqual(res.data[i], tag_serializers[i].data)
+
+    def test_get_tag_by_search_name_success(self):
+        """Test to get tags by searching name to be successful."""
+        tag_data = [
+            {
+                'name': 'Rock'
+            },
+            {
+                'name': 'Pop rock'
+            },
+            {
+                'name': 'Pop'
+            }
+        ]
+
+        for tag in tag_data:
+            Tag.objects.create(user=AUTHENTICATED_USER_1,
+                               name=tag['name'])
+
+        params = {'search': 'rock'}
+        res = self.__client_1.get(TAG_URL, params)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+        self.assertEqual(res.data[0]['name'], 'Pop rock')
+        self.assertEqual(res.data[1]['name'], 'Rock')

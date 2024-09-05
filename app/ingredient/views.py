@@ -2,6 +2,8 @@
 from .serializer import IngredientSerializer
 from core.models import Ingredient
 
+from rest_framework.filters import SearchFilter
+from django_filters import rest_framework as filters
 from rest_framework import viewsets
 from rest_framework import authentication, permissions
 
@@ -10,14 +12,18 @@ class IngredientView(viewsets.ModelViewSet):
     """Ingedient view for ingredient app."""
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.all()
+    filter_backends = [filters.DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['name']
+    search_fields = ['name']
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """return custom queryset."""
         queryset = self.queryset.filter(user=self.request.user)
-        filter_params = {}
-        for k, v in self.request.query_params.items():
-            filter_params['{}'.format(k + '__in')] =\
-                [int(v_i) if k == 'id' else v_i for v_i in v.split(',')]
-        return queryset.filter(**filter_params).order_by('name')
+        id_params = self.request.query_params.get('id')
+
+        if id_params:
+            ids = [int(id_i) for id_i in id_params.split(',')]
+            queryset = queryset.filter(id__in=ids)
+        return queryset.order_by('name')
