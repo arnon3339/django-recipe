@@ -24,4 +24,15 @@ class TagView(
 
     def get_queryset(self):
         """Get custom query set."""
-        return self.queryset.filter(user=self.request.user).order_by('name')
+        queryset = self.queryset.filter(user=self.request.user)
+        id_params = self.request.query_params.get('id')
+        name_params = self.request.query_params.get('name')
+
+        if id_params:
+            ids = [int(id_i) for id_i in id_params.split(',')]
+            queryset = queryset.filter(id__in=ids)
+        if name_params:
+            names = name_params.split(',')
+            queryset = queryset.filter(name__in=names)
+
+        return queryset.order_by('name')

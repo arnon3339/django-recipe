@@ -8,6 +8,7 @@ from ingredient.serializer import IngredientSerializer
 from rest_framework.test import APIClient
 from rest_framework import status
 
+import random
 
 INGREDIENT_URL = reverse('ingredient:ingredient-list')
 
@@ -144,3 +145,68 @@ class PrivateIngredientTest(TestCase):
         res = self.__client_1.delete(get_ingredient_detail(ingredient.id))
 
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_get_ingredients_with_ids_success(self):
+        """Test to get ingredients by prividing ids parmas."""
+        ingredient_data = [
+            {
+                'name': 'Ingredient{}'.format(i)
+            }
+            for i in range(10)
+        ]
+        res_list = [
+            self.__client_1.post(INGREDIENT_URL, ingredient_data[i])
+            for i in range(len(ingredient_data))
+        ]
+
+        ingredient_res_data_ids = random.sample([
+            res_list[i].data['id'] for i in range(len(res_list))
+        ], 3)
+
+        ingredient_res_data_ids.sort()
+
+        ingredients_serializers = [
+            IngredientSerializer(Ingredient.objects.get(id=id_i))
+            for id_i in ingredient_res_data_ids
+        ]
+
+        params = {'id': ','.join([str(id_i)
+                                  for id_i in ingredient_res_data_ids])}
+
+        res = self.__client_1.get(INGREDIENT_URL, params)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        for i in range(len(res.data)):
+            self.assertEqual(res.data[i], ingredients_serializers[i].data)
+
+    def test_get_ingredients_with_name_success(self):
+        """Test to get ingredients by prividing name parmas."""
+        ingredient_data = [
+            {
+                'name': 'Ingredient{}'.format(i)
+            }
+            for i in range(10)
+        ]
+        res_list = [
+            self.__client_1.post(INGREDIENT_URL, ingredient_data[i])
+            for i in range(len(ingredient_data))
+        ]
+
+        ingredient_res_data_names = random.sample([
+            res_list[i].data['name'] for i in range(len(res_list))
+        ], 3)
+
+        ingredient_res_data_names.sort()
+
+        ingredients_serializers = [
+            IngredientSerializer(Ingredient.objects.get(name=name_i))
+            for name_i in ingredient_res_data_names
+        ]
+
+        params = {'name': ','.join(ingredient_res_data_names)}
+
+        res = self.__client_1.get(INGREDIENT_URL, params)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        for i in range(len(res.data)):
+            self.assertEqual(res.data[i], ingredients_serializers[i].data)

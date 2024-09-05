@@ -7,8 +7,9 @@ from core.models import Tag
 from rest_framework.test import APIClient
 from rest_framework import status
 
-
 from tag.serializer import TagSerializer
+
+import random
 
 
 TAG_URL = reverse('tag:tag-list')
@@ -161,3 +162,67 @@ class PrivateTagSerializerTest(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(has_tag)
+
+    def test_get_tag_with_id_success(self):
+        """Test to get tags by prividing tag id parmas."""
+        tag_data = [
+            {
+                'name': 'Tag{}'.format(i)
+            }
+            for i in range(10)
+        ]
+        res_list = [
+            self.__client_1.post(TAG_URL, tag_data[i])
+            for i in range(len(tag_data))
+        ]
+
+        tag_res_data_ids = random.sample([
+            res_list[i].data['id'] for i in range(len(res_list))
+        ], 3)
+
+        tag_res_data_ids.sort()
+
+        tag_serializers = [
+            TagSerializer(Tag.objects.get(id=id_i))
+            for id_i in tag_res_data_ids
+        ]
+
+        params = {'id': ','.join([str(id_i) for id_i in tag_res_data_ids])}
+
+        res = self.__client_1.get(TAG_URL, params)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        for i in range(len(res.data)):
+            self.assertEqual(res.data[i], tag_serializers[i].data)
+
+    def test_get_tag_with_names_success(self):
+        """Test to get tags by prividing tag name parmas."""
+        tag_data = [
+            {
+                'name': 'Tag{}'.format(i)
+            }
+            for i in range(10)
+        ]
+        res_list = [
+            self.__client_1.post(TAG_URL, tag_data[i])
+            for i in range(len(tag_data))
+        ]
+
+        tag_res_data_names = random.sample([
+            res_list[i].data['name'] for i in range(len(res_list))
+        ], 3)
+
+        tag_res_data_names.sort()
+
+        tag_serializers = [
+            TagSerializer(Tag.objects.get(name=name_i))
+            for name_i in tag_res_data_names
+        ]
+
+        params = {'name': ','.join(tag_res_data_names)}
+
+        res = self.__client_1.get(TAG_URL, params)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        for i in range(len(res.data)):
+            self.assertEqual(res.data[i], tag_serializers[i].data)

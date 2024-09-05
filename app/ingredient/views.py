@@ -15,4 +15,9 @@ class IngredientView(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """return custom queryset."""
-        return self.queryset.filter(user=self.request.user).order_by('name')
+        queryset = self.queryset.filter(user=self.request.user)
+        filter_params = {}
+        for k, v in self.request.query_params.items():
+            filter_params['{}'.format(k + '__in')] =\
+                [int(v_i) if k == 'id' else v_i for v_i in v.split(',')]
+        return queryset.filter(**filter_params).order_by('name')
